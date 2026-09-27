@@ -1,0 +1,2090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+
+<title>Grounded — Document Q&A</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Spectral:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+<style>
+:root {
+  --ink:#0F1320;
+  --ink-2:#171C2C;
+  --ink-3:#222840;
+  --line:#313A57;
+  --gold:#C9A24B;
+  --gold-soft:#7A6636;
+  --teal:#6FB3AE;
+  --text:#E7E4D9;
+  --text-dim:#A6ADC6;
+  --danger:#C96B4B;
+  --good:#7DAE7D;
+
+  --serif:'Spectral',Georgia,serif;
+  --sans:'IBM Plex Sans',Arial,sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+
+* {
+  box-sizing:border-box;
+}
+
+html,body {
+  margin:0;
+  min-height:100%;
+}
+
+body {
+  background:var(--ink);
+  color:var(--text);
+  font-family:var(--sans);
+  line-height:1.5;
+}
+
+.wrap {
+  max-width:1120px;
+  margin:auto;
+  padding:28px 20px 60px;
+}
+
+/* HEADER */
+
+header {
+  margin-bottom:28px;
+}
+
+.tag {
+  display:inline-block;
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--gold);
+  border:1px solid var(--gold-soft);
+  padding:4px 8px;
+  border-radius:4px;
+}
+
+h1 {
+  font-family:var(--serif);
+  font-size:clamp(30px,5vw,42px);
+  margin:10px 0 6px;
+}
+
+.lede {
+  color:var(--text-dim);
+  max-width:700px;
+  font-size:15px;
+}
+
+/* PIPELINE */
+
+.pipeline {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  border:1px solid var(--line);
+  margin:25px 0;
+  border-radius:5px;
+  overflow:hidden;
+}
+
+.stage {
+  background:var(--ink-2);
+  padding:14px;
+  border-right:1px solid var(--line);
+  position:relative;
+}
+
+.stage:last-child {
+  border-right:none;
+}
+
+.stage .num {
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--text-dim);
+}
+
+.stage .label {
+  font-size:13px;
+  margin-top:4px;
+}
+
+.stage.active {
+  background:var(--ink-3);
+}
+
+.stage.active .num {
+  color:var(--gold);
+}
+
+.stage.done {
+  background:var(--ink-3);
+}
+
+.stage.done .num {
+  color:var(--good);
+}
+
+.stage-underline {
+  position:absolute;
+  bottom:0;
+  left:0;
+  width:100%;
+  height:2px;
+}
+
+.stage.active .stage-underline {
+  background:var(--gold);
+}
+
+.stage.done .stage-underline {
+  background:var(--good);
+}
+
+/* HOW */
+
+details {
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  border-radius:5px;
+  margin-bottom:22px;
+}
+
+summary {
+  cursor:pointer;
+  padding:12px 15px;
+  color:var(--text-dim);
+  font-family:var(--mono);
+  font-size:13px;
+}
+
+.how-body {
+  padding:0 16px 16px;
+  color:var(--text-dim);
+  font-size:13px;
+}
+
+/* GRID */
+
+.grid {
+  display:grid;
+  grid-template-columns:1fr 1.15fr;
+  gap:18px;
+}
+
+@media(max-width:850px) {
+  .grid {
+    grid-template-columns:1fr;
+  }
+
+  .pipeline {
+    grid-template-columns:1fr 1fr;
+  }
+}
+
+@media(max-width:500px) {
+  .pipeline {
+    grid-template-columns:1fr;
+  }
+
+  .stage {
+    border-right:none;
+    border-bottom:1px solid var(--line);
+  }
+}
+
+/* PANEL */
+
+.panel {
+  background:var(--ink-2);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:18px;
+  margin-bottom:18px;
+}
+
+.panel h2 {
+  font-family:var(--serif);
+  font-size:18px;
+  margin:0 0 4px;
+}
+
+.sub {
+  color:var(--text-dim);
+  font-size:12.5px;
+  margin:0 0 14px;
+}
+
+/* UPLOAD */
+
+.upload-area {
+  border:2px dashed var(--line);
+  border-radius:6px;
+  padding:28px 15px;
+  text-align:center;
+  transition:0.2s;
+  cursor:pointer;
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+  border-color:var(--gold);
+  background:rgba(201,162,75,0.07);
+}
+
+.upload-icon {
+  font-size:32px;
+  margin-bottom:8px;
+}
+
+.upload-title {
+  font-size:15px;
+  font-weight:500;
+}
+
+.upload-help {
+  color:var(--text-dim);
+  font-size:12px;
+  margin-top:4px;
+}
+
+/* IMPORTANT:
+   Do not use display:none for input.
+*/
+
+#fileInput {
+  position:absolute;
+  width:1px;
+  height:1px;
+  opacity:0;
+  pointer-events:none;
+}
+
+.choose-btn {
+  display:inline-block;
+  margin-top:15px;
+  background:var(--gold);
+  color:#17130a;
+  padding:9px 18px;
+  border-radius:4px;
+  font-weight:600;
+  font-size:14px;
+  cursor:pointer;
+}
+
+.choose-btn:hover {
+  filter:brightness(1.1);
+}
+
+/* FILE LIST */
+
+.filelist {
+  margin-top:14px;
+}
+
+.file-row {
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--ink-3);
+  padding:9px 10px;
+  border-radius:4px;
+  margin-bottom:6px;
+  font-size:12px;
+}
+
+.file-name {
+  flex:1;
+  overflow:hidden;
+  white-space:nowrap;
+  text-overflow:ellipsis;
+  font-family:var(--mono);
+}
+
+.file-count {
+  color:var(--text-dim);
+}
+
+.status-ready {
+  color:var(--good);
+}
+
+.status-processing {
+  color:var(--gold);
+}
+
+.status-error {
+  color:var(--danger);
+}
+
+/* CHUNKS */
+
+.chunk-scroll {
+  max-height:300px;
+  overflow-y:auto;
+}
+
+.chunk-item {
+  background:var(--ink-3);
+  border-left:2px solid var(--gold-soft);
+  padding:9px 10px;
+  margin-bottom:7px;
+  border-radius:0 4px 4px 0;
+  font-size:12px;
+  color:var(--text-dim);
+}
+
+.chunk-head {
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--gold);
+  margin-bottom:4px;
+}
+
+.empty {
+  color:var(--text-dim);
+  font-style:italic;
+  font-size:13px;
+}
+
+/* QUESTION */
+
+textarea {
+  width:100%;
+  min-height:80px;
+  resize:vertical;
+  background:var(--ink-3);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:5px;
+  padding:11px;
+  font-family:var(--sans);
+  font-size:14px;
+}
+
+textarea:focus {
+  outline:none;
+  border-color:var(--gold);
+}
+
+.buttons {
+  display:flex;
+  justify-content:flex-end;
+  gap:8px;
+  margin-top:10px;
+}
+
+button {
+  cursor:pointer;
+  border-radius:4px;
+  padding:9px 17px;
+  font-family:var(--sans);
+}
+
+.primary {
+  background:var(--gold);
+  color:#17130a;
+  border:none;
+  font-weight:600;
+}
+
+.primary:disabled {
+  opacity:.4;
+  cursor:not-allowed;
+}
+
+.secondary {
+  background:transparent;
+  color:var(--text-dim);
+  border:1px solid var(--line);
+}
+
+/* ANSWER */
+
+.answer {
+  margin-top:16px;
+  min-height:70px;
+  font-size:15px;
+  line-height:1.7;
+  white-space:pre-wrap;
+}
+
+.placeholder {
+  color:var(--text-dim);
+  font-size:13px;
+  font-style:italic;
+}
+
+/* SOURCES */
+
+.sources {
+  margin-top:15px;
+}
+
+.source {
+  background:var(--ink-3);
+  padding:10px;
+  margin-bottom:7px;
+  border-radius:4px;
+}
+
+.source-top {
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--gold);
+}
+
+.source-text {
+  color:var(--text-dim);
+  font-size:12px;
+  margin-top:5px;
+}
+
+.score {
+  color:var(--teal);
+}
+
+/* BANNER */
+
+.banner {
+  margin-top:12px;
+  padding:9px 11px;
+  border-radius:4px;
+  font-size:12px;
+}
+
+.info {
+  background:rgba(111,179,174,.1);
+  border:1px solid rgba(111,179,174,.3);
+  color:var(--teal);
+}
+
+.warn {
+  background:rgba(201,107,75,.1);
+  border:1px solid rgba(201,107,75,.3);
+  color:var(--danger);
+}
+
+.success {
+  background:rgba(125,174,125,.1);
+  border:1px solid rgba(125,174,125,.3);
+  color:var(--good);
+}
+
+/* FOOTER */
+
+footer {
+  text-align:center;
+  color:var(--text-dim);
+  font-size:11px;
+  margin-top:30px;
+}
+</style>
+</head>
+
+<body>
+
+<div class="wrap">
+
+<header>
+  <span class="tag">ShadowFox / AI Engineer</span>
+
+  <h1>Grounded</h1>
+
+  <p class="lede">
+    A retrieval-based document Q&amp;A assistant.
+    Upload TXT, Markdown, or PDF documents and ask questions
+    based on their content.
+  </p>
+</header>
+
+
+<!-- PIPELINE -->
+
+<div class="pipeline">
+
+  <div class="stage" data-stage="upload">
+    <div class="stage-underline"></div>
+    <div class="num">01</div>
+    <div class="label">Upload &amp; Extract</div>
+  </div>
+
+  <div class="stage" data-stage="chunk">
+    <div class="stage-underline"></div>
+    <div class="num">02</div>
+    <div class="label">Chunk Text</div>
+  </div>
+
+  <div class="stage" data-stage="retrieve">
+    <div class="stage-underline"></div>
+    <div class="num">03</div>
+    <div class="label">Retrieve Matches</div>
+  </div>
+
+  <div class="stage" data-stage="generate">
+    <div class="stage-underline"></div>
+    <div class="num">04</div>
+    <div class="label">Grounded Answer</div>
+  </div>
+
+</div>
+
+
+<details>
+
+  <summary>How this pipeline works</summary>
+
+  <div class="how-body">
+
+    <p>
+      Documents are processed directly in the browser.
+      Text and Markdown files are read directly and PDF files
+      are extracted page-by-page using PDF.js.
+    </p>
+
+    <p>
+      The extracted text is divided into overlapping chunks.
+      TF-IDF and cosine similarity are then used to find the
+      most relevant chunks for the question.
+    </p>
+
+    <p>
+      The retrieved chunks are displayed so the user can
+      inspect the information used for the answer.
+    </p>
+
+  </div>
+
+</details>
+
+
+<div class="grid">
+
+<!-- LEFT -->
+
+<div>
+
+  <!-- UPLOAD -->
+
+  <div class="panel">
+
+    <h2>Upload Documents</h2>
+
+    <p class="sub">
+      Supported formats: .txt, .md, .pdf
+    </p>
+
+
+    <div class="upload-area" id="uploadArea">
+
+      <div class="upload-icon">📄</div>
+
+      <div class="upload-title">
+        Drag and drop files here
+      </div>
+
+      <div class="upload-help">
+        or use the button below
+      </div>
+
+      <!-- REAL FILE INPUT -->
+      <input
+        type="file"
+        id="fileInput"
+        accept=".txt,.md,.pdf,text/plain,text/markdown,application/pdf"
+        multiple
+      >
+
+      <label for="fileInput" class="choose-btn">
+        Choose Files
+      </label>
+
+    </div>
+
+
+    <div id="fileList" class="filelist"></div>
+
+    <div id="uploadBanner"></div>
+
+  </div>
+
+
+  <!-- CHUNKS -->
+
+  <div class="panel">
+
+    <h2>Chunks</h2>
+
+    <p class="sub" id="chunkSub">
+      No documents processed yet
+    </p>
+
+    <div class="chunk-scroll" id="chunkScroll">
+
+      <p class="empty">
+        Upload a document to see its retrievable sections.
+      </p>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- RIGHT -->
+
+<div>
+
+  <!-- QUESTION -->
+
+  <div class="panel">
+
+    <h2>Ask a Question</h2>
+
+    <p class="sub">
+      Ask something about your uploaded document.
+    </p>
+
+    <textarea
+      id="questionInput"
+      placeholder="Example: What is the main topic of this document?"
+    ></textarea>
+
+
+    <div class="buttons">
+
+      <button
+        class="secondary"
+        id="clearBtn"
+        type="button">
+        Clear
+      </button>
+
+      <button
+        class="primary"
+        id="askBtn"
+        type="button"
+        disabled>
+        Ask
+      </button>
+
+    </div>
+
+
+    <div id="askBanner"></div>
+
+
+    <div
+      id="answerBox"
+      class="answer placeholder">
+
+      Upload a document and ask a question.
+
+    </div>
+
+  </div>
+
+
+  <!-- SOURCES -->
+
+  <div
+    class="panel"
+    id="sourcesPanel"
+    style="display:none;">
+
+    <h2>Retrieved Context</h2>
+
+    <p class="sub">
+      Most relevant document sections
+    </p>
+
+    <div id="sourcesList"></div>
+
+  </div>
+
+</div>
+
+</div>
+
+
+<footer>
+  Documents, chunking and similarity search run entirely in your browser.
+</footer>
+
+</div>
+
+
+<script>
+
+(() => {
+
+"use strict";
+
+
+/* =========================================================
+   STATE
+========================================================= */
+
+let chunks = [];
+let tfidfIndex = null;
+
+const fileMeta = [];
+
+
+/* =========================================================
+   PDF.JS SETUP
+========================================================= */
+
+if (window.pdfjsLib) {
+
+  pdfjsLib.GlobalWorkerOptions.workerSrc =
+    "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+
+}
+
+
+/* =========================================================
+   STOP WORDS
+========================================================= */
+
+const STOPWORDS = new Set(`
+
+a an the is are was were be been being
+of to in on for with as by at from
+this that it its it's and or but if
+then than so such not no nor do does
+did doing have has had having
+i you he she we they them his her
+their our your what which who whom
+will would can could should may might
+must shall about into over under
+again further here there all any both
+each few more most other some only
+own same too very just now
+
+`.split(/\s+/));
+
+
+/* =========================================================
+   DOM
+========================================================= */
+
+const fileInput =
+  document.getElementById("fileInput");
+
+const uploadArea =
+  document.getElementById("uploadArea");
+
+const fileList =
+  document.getElementById("fileList");
+
+const chunkScroll =
+  document.getElementById("chunkScroll");
+
+const chunkSub =
+  document.getElementById("chunkSub");
+
+const questionInput =
+  document.getElementById("questionInput");
+
+const askBtn =
+  document.getElementById("askBtn");
+
+const answerBox =
+  document.getElementById("answerBox");
+
+const sourcesPanel =
+  document.getElementById("sourcesPanel");
+
+const sourcesList =
+  document.getElementById("sourcesList");
+
+
+/* =========================================================
+   PIPELINE
+========================================================= */
+
+function setStage(name, state) {
+
+  const stage =
+    document.querySelector(
+      `[data-stage="${name}"]`
+    );
+
+  if (!stage) return;
+
+  stage.classList.remove(
+    "active",
+    "done"
+  );
+
+  if (state) {
+    stage.classList.add(state);
+  }
+
+}
+
+
+/* =========================================================
+   BANNER
+========================================================= */
+
+function showBanner(
+  elementId,
+  type,
+  message
+) {
+
+  const element =
+    document.getElementById(elementId);
+
+  if (!element) return;
+
+  if (!message) {
+
+    element.innerHTML = "";
+
+    return;
+  }
+
+  element.innerHTML = `
+    <div class="banner ${type}">
+      ${escapeHTML(message)}
+    </div>
+  `;
+
+}
+
+
+/* =========================================================
+   ESCAPE HTML
+========================================================= */
+
+function escapeHTML(value) {
+
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+}
+
+
+/* =========================================================
+   FILE EXTRACTION
+========================================================= */
+
+async function extractText(file) {
+
+  const extension =
+    file.name
+      .split(".")
+      .pop()
+      .toLowerCase();
+
+
+  /* TXT / MD */
+
+  if (
+    extension === "txt" ||
+    extension === "md"
+  ) {
+
+    return await file.text();
+
+  }
+
+
+  /* PDF */
+
+  if (extension === "pdf") {
+
+    if (!window.pdfjsLib) {
+
+      throw new Error(
+        "PDF.js could not be loaded. Check your internet connection."
+      );
+
+    }
+
+
+    const arrayBuffer =
+      await file.arrayBuffer();
+
+
+    const pdf =
+      await pdfjsLib
+        .getDocument({
+          data: arrayBuffer
+        })
+        .promise;
+
+
+    let completeText = "";
+
+
+    for (
+      let pageNumber = 1;
+      pageNumber <= pdf.numPages;
+      pageNumber++
+    ) {
+
+      const page =
+        await pdf.getPage(pageNumber);
+
+
+      const content =
+        await page.getTextContent();
+
+
+      const pageText =
+        content.items
+          .map(item => item.str)
+          .join(" ");
+
+
+      completeText +=
+        pageText + "\n\n";
+
+    }
+
+
+    return completeText;
+
+  }
+
+
+  throw new Error(
+    "Unsupported file type"
+  );
+
+}
+
+
+/* =========================================================
+   CHUNKING
+========================================================= */
+
+function chunkText(
+  text,
+  source,
+  size = 800,
+  overlap = 150
+) {
+
+  const clean =
+    text
+      .replace(/\s+/g, " ")
+      .trim();
+
+
+  const result = [];
+
+
+  if (!clean) {
+    return result;
+  }
+
+
+  let start = 0;
+
+
+  while (start < clean.length) {
+
+    const end =
+      Math.min(
+        start + size,
+        clean.length
+      );
+
+
+    result.push({
+
+      text:
+        clean.slice(start, end),
+
+      source:
+
+        source,
+
+      startChar:
+
+        start
+
+    });
+
+
+    if (end >= clean.length) {
+      break;
+    }
+
+
+    start =
+      end - overlap;
+
+  }
+
+
+  return result;
+
+}
+
+
+/* =========================================================
+   TOKENIZER
+========================================================= */
+
+function tokenize(text) {
+
+  return (
+    text
+      .toLowerCase()
+      .match(/[a-z0-9]+/g) || []
+  )
+  .filter(
+    token =>
+      token.length > 1 &&
+      !STOPWORDS.has(token)
+  );
+
+}
+
+
+/* =========================================================
+   TF-IDF
+========================================================= */
+
+function buildTfidf(chunkArray) {
+
+  const vocabulary =
+    new Map();
+
+
+  const documentTokens =
+    chunkArray.map(
+      chunk =>
+        tokenize(chunk.text)
+    );
+
+
+  /* vocabulary */
+
+  documentTokens.forEach(tokens => {
+
+    new Set(tokens).forEach(token => {
+
+      if (!vocabulary.has(token)) {
+
+        vocabulary.set(
+          token,
+          vocabulary.size
+        );
+
+      }
+
+    });
+
+  });
+
+
+  const documentCount =
+    chunkArray.length;
+
+
+  const documentFrequency =
+    new Float64Array(
+      vocabulary.size
+    );
+
+
+  /* DF */
+
+  documentTokens.forEach(tokens => {
+
+    new Set(tokens).forEach(token => {
+
+      const index =
+        vocabulary.get(token);
+
+      documentFrequency[index]++;
+
+    });
+
+  });
+
+
+  /* IDF */
+
+  const idf =
+    new Float64Array(
+      vocabulary.size
+    );
+
+
+  for (
+    let i = 0;
+    i < idf.length;
+    i++
+  ) {
+
+    idf[i] =
+      Math.log(
+        (documentCount + 1) /
+        (documentFrequency[i] + 1)
+      ) + 1;
+
+  }
+
+
+  /* VECTORS */
+
+  const vectors =
+    documentTokens.map(tokens => {
+
+      const counts =
+        new Map();
+
+
+      tokens.forEach(token => {
+
+        const index =
+          vocabulary.get(token);
+
+        counts.set(
+          index,
+          (counts.get(index) || 0) + 1
+        );
+
+      });
+
+
+      const terms =
+        new Map();
+
+
+      let normSquare = 0;
+
+
+      counts.forEach(
+        (count, index) => {
+
+          const weight =
+            (count / tokens.length) *
+            idf[index];
+
+
+          terms.set(
+            index,
+            weight
+          );
+
+
+          normSquare +=
+            weight * weight;
+
+        }
+      );
+
+
+      return {
+
+        terms,
+
+        norm:
+          Math.sqrt(
+            normSquare
+          ) || 1e-9
+
+      };
+
+    });
+
+
+  return {
+
+    vocabulary,
+
+    idf,
+
+    vectors
+
+  };
+
+}
+
+
+/* =========================================================
+   QUERY VECTOR
+========================================================= */
+
+function vectorizeQuery(
+  query,
+  index
+) {
+
+  const tokens =
+    tokenize(query);
+
+
+  const counts =
+    new Map();
+
+
+  tokens.forEach(token => {
+
+    if (
+      !index.vocabulary.has(token)
+    ) {
+      return;
+    }
+
+
+    const indexValue =
+      index.vocabulary.get(token);
+
+
+    counts.set(
+      indexValue,
+      (counts.get(indexValue) || 0) + 1
+    );
+
+  });
+
+
+  const terms =
+    new Map();
+
+
+  let normSquare = 0;
+
+
+  counts.forEach(
+    (count, indexValue) => {
+
+      const weight =
+        (count / Math.max(tokens.length, 1)) *
+        index.idf[indexValue];
+
+
+      terms.set(
+        indexValue,
+        weight
+      );
+
+
+      normSquare +=
+        weight * weight;
+
+    }
+  );
+
+
+  return {
+
+    terms,
+
+    norm:
+      Math.sqrt(normSquare) || 1e-9
+
+  };
+
+}
+
+
+/* =========================================================
+   COSINE
+========================================================= */
+
+function cosineSimilarity(a, b) {
+
+  let dot = 0;
+
+
+  const smaller =
+    a.terms.size <
+    b.terms.size
+      ? a
+      : b;
+
+
+  const larger =
+    a.terms.size <
+    b.terms.size
+      ? b
+      : a;
+
+
+  smaller.terms.forEach(
+    (weight, index) => {
+
+      if (
+        larger.terms.has(index)
+      ) {
+
+        dot +=
+          weight *
+          larger.terms.get(index);
+
+      }
+
+    }
+  );
+
+
+  return (
+    dot /
+    (a.norm * b.norm)
+  );
+
+}
+
+
+/* =========================================================
+   RETRIEVAL
+========================================================= */
+
+function retrieve(
+  question,
+  topK = 3
+) {
+
+  if (
+    !tfidfIndex ||
+    chunks.length === 0
+  ) {
+
+    return [];
+
+  }
+
+
+  const queryVector =
+    vectorizeQuery(
+      question,
+      tfidfIndex
+    );
+
+
+  const scored =
+    chunks.map(
+      (chunk, index) => ({
+
+        chunk,
+
+        score:
+          cosineSimilarity(
+            queryVector,
+            tfidfIndex.vectors[index]
+          )
+
+      })
+    );
+
+
+  scored.sort(
+    (a, b) =>
+      b.score - a.score
+  );
+
+
+  return scored
+    .slice(0, topK)
+    .filter(
+      item =>
+        item.score > 0
+    );
+
+}
+
+
+/* =========================================================
+   RENDER FILE LIST
+========================================================= */
+
+function renderFileList() {
+
+  fileList.innerHTML = "";
+
+
+  fileMeta.forEach(meta => {
+
+    const row =
+      document.createElement("div");
+
+
+    row.className =
+      "file-row";
+
+
+    let statusClass =
+      "status-processing";
+
+
+    if (meta.status === "ready") {
+
+      statusClass =
+        "status-ready";
+
+    }
+
+
+    if (meta.status === "error") {
+
+      statusClass =
+        "status-error";
+
+    }
+
+
+    row.innerHTML = `
+
+      <span class="file-name">
+        ${escapeHTML(meta.name)}
+      </span>
+
+      <span class="file-count">
+        ${meta.count || 0} chunks
+      </span>
+
+      <span class="${statusClass}">
+        ${escapeHTML(meta.statusText)}
+      </span>
+
+    `;
+
+
+    fileList.appendChild(row);
+
+  });
+
+}
+
+
+/* =========================================================
+   RENDER CHUNKS
+========================================================= */
+
+function renderChunks() {
+
+  if (chunks.length === 0) {
+
+    chunkSub.textContent =
+      "No documents processed yet";
+
+
+    chunkScroll.innerHTML = `
+      <p class="empty">
+        Upload a document to see its chunks.
+      </p>
+    `;
+
+    return;
+
+  }
+
+
+  chunkSub.textContent =
+    `${chunks.length} chunks indexed · 800 characters · 150 overlap`;
+
+
+  chunkScroll.innerHTML =
+    chunks
+      .map(
+        (chunk, index) => `
+
+          <div class="chunk-item">
+
+            <div class="chunk-head">
+
+              #${index + 1}
+              · ${escapeHTML(chunk.source)}
+              · char ${chunk.startChar}
+
+            </div>
+
+            ${escapeHTML(
+              chunk.text.slice(0, 220)
+            )}
+
+            ${chunk.text.length > 220 ? "…" : ""}
+
+          </div>
+
+        `
+      )
+      .join("");
+
+}
+
+
+/* =========================================================
+   PROCESS FILES
+========================================================= */
+
+async function processFiles(
+  selectedFiles
+) {
+
+  const files =
+    Array.from(selectedFiles);
+
+
+  if (!files.length) {
+    return;
+  }
+
+
+  setStage(
+    "upload",
+    "active"
+  );
+
+
+  showBanner(
+    "uploadBanner",
+    "",
+    ""
+  );
+
+
+  for (const file of files) {
+
+    const meta = {
+
+      name:file.name,
+
+      status:"processing",
+
+      statusText:"processing…",
+
+      count:0
+
+    };
+
+
+    fileMeta.push(meta);
+
+    renderFileList();
+
+
+    try {
+
+      const text =
+        await extractText(file);
+
+
+      if (
+        !text ||
+        !text.trim()
+      ) {
+
+        throw new Error(
+          "The file contains no readable text"
+        );
+
+      }
+
+
+      const newChunks =
+        chunkText(
+          text,
+          file.name
+        );
+
+
+      chunks =
+        chunks.concat(
+          newChunks
+        );
+
+
+      meta.status =
+        "ready";
+
+
+      meta.statusText =
+        "ready";
+
+
+      meta.count =
+        newChunks.length;
+
+
+    }
+
+    catch(error) {
+
+      console.error(
+        "File processing error:",
+        error
+      );
+
+
+      meta.status =
+        "error";
+
+
+      meta.statusText =
+        error.message ||
+        "failed to read";
+
+    }
+
+
+    renderFileList();
+
+  }
+
+
+  setStage(
+    "upload",
+    "done"
+  );
+
+
+  if (!chunks.length) {
+
+    showBanner(
+      "uploadBanner",
+      "warn",
+      "No readable content was found."
+    );
+
+
+    askBtn.disabled =
+      true;
+
+
+    return;
+
+  }
+
+
+  /* BUILD INDEX */
+
+  setStage(
+    "chunk",
+    "active"
+  );
+
+
+  renderChunks();
+
+
+  tfidfIndex =
+    buildTfidf(chunks);
+
+
+  setStage(
+    "chunk",
+    "done"
+  );
+
+
+  askBtn.disabled =
+    false;
+
+
+  showBanner(
+    "uploadBanner",
+    "success",
+    `${chunks.length} chunks are ready. You can now ask questions.`
+  );
+
+}
+
+
+/* =========================================================
+   FILE INPUT
+========================================================= */
+
+fileInput.addEventListener(
+  "change",
+  async function(event) {
+
+    console.log(
+      "Files selected:",
+      event.target.files
+    );
+
+
+    await processFiles(
+      event.target.files
+    );
+
+
+    /*
+      Reset input so the same file can
+      be selected again later.
+    */
+
+    event.target.value = "";
+
+  }
+);
+
+
+/* =========================================================
+   DRAG & DROP
+========================================================= */
+
+[
+  "dragenter",
+  "dragover"
+].forEach(eventName => {
+
+  uploadArea.addEventListener(
+    eventName,
+    event => {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      uploadArea.classList.add(
+        "dragover"
+      );
+
+    }
+  );
+
+});
+
+
+[
+  "dragleave",
+  "drop"
+].forEach(eventName => {
+
+  uploadArea.addEventListener(
+    eventName,
+    event => {
+
+      event.preventDefault();
+
+      event.stopPropagation();
+
+      uploadArea.classList.remove(
+        "dragover"
+      );
+
+    }
+  );
+
+});
+
+
+uploadArea.addEventListener(
+  "drop",
+  async event => {
+
+    const files =
+      event.dataTransfer.files;
+
+
+    if (files.length) {
+
+      await processFiles(
+        files
+      );
+
+    }
+
+  }
+);
+
+
+/* =========================================================
+   ASK
+========================================================= */
+
+askBtn.addEventListener(
+  "click",
+  askQuestion
+);
+
+
+questionInput.addEventListener(
+  "keydown",
+  event => {
+
+    if (
+      event.key === "Enter" &&
+      (event.ctrlKey ||
+       event.metaKey)
+    ) {
+
+      event.preventDefault();
+
+      askQuestion();
+
+    }
+
+  }
+);
+
+
+async function askQuestion() {
+
+  const question =
+    questionInput.value.trim();
+
+
+  if (!question) {
+
+    showBanner(
+      "askBanner",
+      "warn",
+      "Please type a question."
+    );
+
+    return;
+
+  }
+
+
+  if (!chunks.length) {
+
+    showBanner(
+      "askBanner",
+      "warn",
+      "Upload a document first."
+    );
+
+    return;
+
+  }
+
+
+  showBanner(
+    "askBanner",
+    "",
+    ""
+  );
+
+
+  askBtn.disabled =
+    true;
+
+
+  /* RETRIEVE */
+
+  setStage(
+    "retrieve",
+    "active"
+  );
+
+
+  const results =
+    retrieve(
+      question,
+      3
+    );
+
+
+  setStage(
+    "retrieve",
+    "done"
+  );
+
+
+  /* SOURCES */
+
+  sourcesPanel.style.display =
+    "block";
+
+
+  if (!results.length) {
+
+    sourcesList.innerHTML = `
+      <p class="empty">
+        No relevant document section was found.
+      </p>
+    `;
+
+
+    answerBox.className =
+      "answer";
+
+
+    answerBox.textContent =
+      "The uploaded documents do not contain enough information to answer this question.";
+
+
+    askBtn.disabled =
+      false;
+
+
+    return;
+
+  }
+
+
+  sourcesList.innerHTML =
+    results
+      .map(
+        result => `
+
+          <div class="source">
+
+            <div class="source-top">
+
+              <span>
+                ${escapeHTML(
+                  result.chunk.source
+                )}
+                · char
+                ${result.chunk.startChar}
+              </span>
+
+              <span class="score">
+                ${result.score.toFixed(3)}
+              </span>
+
+            </div>
+
+            <div class="source-text">
+
+              ${escapeHTML(
+                result.chunk.text.slice(0, 300)
+              )}
+
+              ${
+                result.chunk.text.length > 300
+                  ? "…"
+                  : ""
+              }
+
+            </div>
+
+          </div>
+
+        `
+      )
+      .join("");
+
+
+  /* LOCAL GROUNDED ANSWER */
+
+  setStage(
+    "generate",
+    "active"
+  );
+
+
+  answerBox.className =
+    "answer";
+
+
+  answerBox.textContent =
+    "Searching the uploaded document…";
+
+
+  /*
+    Since this version does not require
+    an API key, provide a grounded answer
+    directly from the retrieved text.
+  */
+
+  await new Promise(
+    resolve =>
+      setTimeout(resolve, 400)
+  );
+
+
+  const best =
+    results[0];
+
+
+  answerBox.textContent =
+    `Based on the uploaded document:\n\n` +
+    `${best.chunk.text}\n\n` +
+    `Source: ${best.chunk.source} ` +
+    `(chunk starting at character ${best.chunk.startChar}).`;
+
+
+  setStage(
+    "generate",
+    "done"
+  );
+
+
+  askBtn.disabled =
+    false;
+
+}
+
+
+/* =========================================================
+   CLEAR
+========================================================= */
+
+document
+  .getElementById("clearBtn")
+  .addEventListener(
+    "click",
+    () => {
+
+      questionInput.value = "";
+
+
+      answerBox.className =
+        "answer placeholder";
+
+
+      answerBox.textContent =
+        "Upload a document and ask a question.";
+
+
+      sourcesPanel.style.display =
+        "none";
+
+
+      showBanner(
+        "askBanner",
+        "",
+        ""
+      );
+
+
+      setStage(
+        "retrieve",
+        ""
+      );
+
+
+      setStage(
+        "generate",
+        ""
+      );
+
+    }
+  );
+
+
+/* =========================================================
+   INITIAL MESSAGE
+========================================================= */
+
+showBanner(
+  "uploadBanner",
+  "info",
+  "Choose a TXT, MD or PDF file to begin."
+);
+
+
+})();
+</script>
+
+</body>
+</html>
