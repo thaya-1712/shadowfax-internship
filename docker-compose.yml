@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  api:
+    build: .
+    container_name: rag-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    restart: unless-stopped
+
+  ui:
+    build: .
+    container_name: rag-ui
+    command: ["streamlit", "run", "streamlit_app.py", "--server.port=8501", "--server.address=0.0.0.0"]
+    ports:
+      - "8501:8501"
+    environment:
+      - RAG_API_URL=http://api:8000
+    depends_on:
+      - api
+    restart: unless-stopped
